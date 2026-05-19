@@ -8,7 +8,7 @@ export function renderElement(props: RenderElementProps) {
       return (
         <p
           {...attributes}
-          className="font-['Courier_Prime'] uppercase font-bold tracking-wide mt-6 mb-2"
+          className="uppercase font-bold mt-6 mb-2 tracking-wide"
         >
           {children}
         </p>
@@ -16,7 +16,7 @@ export function renderElement(props: RenderElementProps) {
 
     case "action":
       return (
-        <p {...attributes} className="font-['Courier_Prime'] my-2">
+        <p {...attributes} className="my-2">
           {children}
         </p>
       );
@@ -25,7 +25,9 @@ export function renderElement(props: RenderElementProps) {
       return (
         <p
           {...attributes}
-          className="font-['Courier_Prime'] uppercase mt-4 mb-0 ml-[38%]"
+          // Mobile: ~35% from left (proportional industry feel)
+          // Desktop: true industry indent of 2.2in
+          className="uppercase mt-4 mb-0 ml-[35%] md:ml-[2.2in]"
         >
           {children}
         </p>
@@ -35,7 +37,7 @@ export function renderElement(props: RenderElementProps) {
       return (
         <p
           {...attributes}
-          className="font-['Courier_Prime'] italic text-muted-foreground my-0 ml-[30%]"
+          className="italic text-muted-foreground my-0 ml-[25%] max-w-[55%] md:ml-[1.6in] md:max-w-[2in]"
         >
           {children}
         </p>
@@ -45,7 +47,7 @@ export function renderElement(props: RenderElementProps) {
       return (
         <p
           {...attributes}
-          className="font-['Courier_Prime'] mb-2 ml-[20%] mr-[20%]"
+          className="mb-2 ml-[15%] mr-[15%] md:ml-[1in] md:mr-0 md:max-w-[3.5in]"
         >
           {children}
         </p>
@@ -53,29 +55,19 @@ export function renderElement(props: RenderElementProps) {
 
     case "transition":
       return (
-        <p
-          {...attributes}
-          className="font-['Courier_Prime'] uppercase text-right my-4"
-        >
+        <p {...attributes} className="uppercase text-right my-4">
           {children}
         </p>
       );
 
     case "shot":
       return (
-        <p
-          {...attributes}
-          className="font-['Courier_Prime'] uppercase mt-4 mb-2"
-        >
+        <p {...attributes} className="uppercase mt-4 mb-2">
           {children}
         </p>
       );
 
     default:
-      return (
-        <p {...attributes} className="font-['Courier_Prime']">
-          {children}
-        </p>
-      );
+      return <p {...attributes}>{children}</p>;
   }
 }

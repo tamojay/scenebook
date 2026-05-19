@@ -58,10 +58,10 @@ export function ProjectsGrid({
       {/* New project tile (matches card dimensions) */}
       <button
         onClick={onCreateClick}
-        className="group aspect-[3/4] rounded-lg border-2 border-dashed border-border hover:border-foreground/40 hover:bg-accent/30 transition-all flex flex-col items-center justify-center gap-3 text-muted-foreground hover:text-foreground"
+        className="group rounded-lg border-2 border-dashed border-border hover:border-foreground/40 hover:bg-accent/30 transition-all flex flex-row md:flex-col items-center justify-center gap-3 text-muted-foreground hover:text-foreground py-4 md:py-0 md:aspect-[3/4]"
       >
-        <div className="h-12 w-12 rounded-full bg-muted group-hover:bg-background flex items-center justify-center transition-colors">
-          <Plus className="h-5 w-5" />
+        <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-muted group-hover:bg-background flex items-center justify-center transition-colors">
+          <Plus className="h-4 w-4 md:h-5 md:w-5" />
         </div>
         <span className="text-sm font-medium">New screenplay</span>
       </button>
