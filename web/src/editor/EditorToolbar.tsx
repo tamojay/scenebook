@@ -24,7 +24,7 @@ export function EditorToolbar() {
   const currentType = getCurrentBlockType(editor) ?? "action";
 
   return (
-    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border py-2 mb-4">
+    <div className="bg-background/80 backdrop-blur-sm border-b border-border py-2 mb-4 px-2">
       <div className="flex items-center gap-2">
         <Select
           value={currentType}

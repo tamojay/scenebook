@@ -1,0 +1,122 @@
+/* ─────────────────────────────────────────────────────────
+   Screenplay page chrome.
+   This file styles ONLY the paper-on-canvas effect.
+   Element styling (margins, casing) lives in renderElement
+   as Tailwind classes for responsive control.
+   ───────────────────────────────────────────────────────── */
+
+/* The container that holds the page — provides contrast background */
+.screenplay-canvas {
+  background: linear-gradient(to bottom, #f5f3ef, #ebe8e1);
+  min-height: 100%;
+  padding: 2rem 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.dark .screenplay-canvas {
+  background: linear-gradient(to bottom, #1a1a1c, #0f0f11);
+}
+
+/* The "page" itself — the white paper */
+.screenplay-page {
+  width: 8.5in;
+  max-width: 100%;
+  background: white;
+  color: #111;
+  padding: 1in 1in 1in 1.5in;
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.04);
+  border-radius: 2px;
+  font-family: "Courier Prime", "Courier New", monospace;
+  font-size: 12pt;
+  line-height: 1.15;
+  min-height: 11in;
+}
+
+.dark .screenplay-page {
+  background: #18181a;
+  color: #e8e8e8;
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.4),
+    0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile: full-bleed, no paper effect — just clean editable surface */
+@media (max-width: 768px) {
+  .screenplay-canvas {
+    background: transparent;
+    padding: 0;
+    min-height: auto;
+  }
+
+  .screenplay-page {
+    width: 100%;
+    padding: 1rem;
+    box-shadow: none;
+    border-radius: 0;
+    min-height: auto;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .dark .screenplay-page {
+    background: transparent;
+    color: inherit;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Print styles
+   When the user prints (or "Save as PDF"), hide everything
+   except the screenplay page itself.
+   ───────────────────────────────────────────────────────── */
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show the page and its contents */
+  .screenplay-page,
+  .screenplay-page * {
+    visibility: visible;
+  }
+
+  /* Strip the page out of its layout context and reset it */
+  .screenplay-page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: white !important;
+    color: black !important;
+    padding: 1in 1in 1in 1.5in;
+    font-family: "Courier Prime", "Courier New", monospace;
+    font-size: 12pt;
+    line-height: 1;
+  }
+
+  /* Force light-mode colors for parentheticals */
+  .screenplay-page .text-muted-foreground {
+    color: #444 !important;
+  }
+
+  /* Standard US Letter page setup */
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  /* Defeat the toolbar/canvas backgrounds and shadows */
+  .screenplay-canvas {
+    background: white !important;
+    padding: 0;
+  }
+}

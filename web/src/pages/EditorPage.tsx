@@ -1,10 +1,24 @@
 import { useEffect, useState } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, Loader2, AlertCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { projectsApi } from "@/lib/api/projects";
-import type { Project } from "@/lib/db/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScreenplayEditor } from "@/editor/ScreenplayEditor";
+import { projectsApi } from "@/lib/api/projects";
+import { useDocument } from "@/lib/hooks/useDocument";
+import { toFountain } from "@/editor/export/fountain";
+import { downloadText, safeFilename } from "@/lib/utils";
+import type { Project } from "@/lib/db/types";
+import type { ScreenplayDocument } from "@/editor/types";
+import { BookOpen } from "lucide-react";
+import { StoryBibleSidebar } from "@/editor/storybible/StoryBibleSidebar";
+import { Sparkles } from "lucide-react";
+import { BeatSheetDrawer } from "@/editor/beatsheet/BeatSheetDrawer";
 
 type LoadState =
   | { status: "loading" }
@@ -14,7 +28,13 @@ type LoadState =
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const { initialValue, saveStatus, onChange } = useDocument(id);
+  const [currentDoc, setCurrentDoc] = useState<ScreenplayDocument | null>(null);
+  const [storyBibleOpen, setStoryBibleOpen] = useState(false);
+  const [jumpToIndex, setJumpToIndex] = useState<number | null>(null);
+  const [beatSheetOpen, setBeatSheetOpen] = useState(false);
 
+  // Load project
   useEffect(() => {
     if (!id) {
       setState({ status: "not-found" });
@@ -28,7 +48,20 @@ export function EditorPage() {
     });
   }, [id]);
 
-  if (state.status === "loading") {
+  // Seed currentDoc once initial document arrives
+  useEffect(() => {
+    if (initialValue) setCurrentDoc(initialValue);
+  }, [initialValue]);
+
+  const handleChange = (value: ScreenplayDocument) => {
+    setCurrentDoc(value);
+    onChange(value);
+  };
+
+  if (
+    state.status === "loading" ||
+    (state.status === "loaded" && initialValue === null)
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground text-sm">Loading…</p>
@@ -41,6 +74,17 @@ export function EditorPage() {
   }
 
   const { project } = state;
+
+  const targetPages =
+    project.format === "feature"
+      ? 110
+      : project.format === "tv_hour"
+        ? 60
+        : project.format === "tv_half"
+          ? 30
+          : project.format === "short"
+            ? 15
+            : 110;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -55,13 +99,146 @@ export function EditorPage() {
             {project.title}
           </h1>
         </div>
+        <div className="flex items-center gap-2">
+          <SaveIndicator status={saveStatus} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => setBeatSheetOpen(true)}
+          >
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Beats</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => setStoryBibleOpen(true)}
+          >
+            <BookOpen className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Story Bible</span>
+          </Button>
+          <ExportMenu
+            title={project.title}
+            document={currentDoc ?? initialValue ?? []}
+          />
+        </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6 md:p-8">
-        <div className="max-w-3xl mx-auto">
-          <ScreenplayEditor />
-        </div>
+      <main className="flex-1 overflow-hidden">
+        <ScreenplayEditor
+          initialValue={initialValue ?? undefined}
+          onChange={handleChange}
+          jumpToIndex={jumpToIndex}
+        />
       </main>
+      <StoryBibleSidebar
+        open={storyBibleOpen}
+        onOpenChange={setStoryBibleOpen}
+        document={currentDoc ?? initialValue ?? []}
+        onJumpTo={(index) => setJumpToIndex(index)}
+      />
+      <BeatSheetDrawer
+        open={beatSheetOpen}
+        onOpenChange={setBeatSheetOpen}
+        document={currentDoc ?? initialValue ?? []}
+        targetPages={targetPages}
+      />
     </div>
+  );
+}
+
+function SaveIndicator({
+  status,
+}: {
+  status: "idle" | "saving" | "saved" | "error";
+}) {
+  if (status === "idle") return null;
+
+  if (status === "saving") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        Saving…
+      </div>
+    );
+  }
+
+  if (status === "saved") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Check className="h-3.5 w-3.5" />
+        Saved
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-destructive">
+      <AlertCircle className="h-3.5 w-3.5" />
+      Error
+    </div>
+  );
+}
+
+function ExportMenu({
+  title,
+  document,
+}: {
+  title: string;
+  document: ScreenplayDocument;
+}) {
+  const baseName = safeFilename(title);
+
+  const handleFountain = () => {
+    const content = toFountain(document);
+    downloadText(`${baseName}.fountain`, content);
+  };
+
+  const handleJson = () => {
+    const content = JSON.stringify(document, null, 2);
+    downloadText(`${baseName}.json`, content, "application/json");
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-9">
+          <Download className="h-4 w-4 mr-1.5" />
+          Export
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleFountain}>
+          <div className="flex flex-col">
+            <span>Fountain</span>
+            <span className="text-xs text-muted-foreground">
+              .fountain — universal plaintext
+            </span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleJson}>
+          <div className="flex flex-col">
+            <span>JSON</span>
+            <span className="text-xs text-muted-foreground">
+              Raw editor data
+            </span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handlePrint}>
+          <div className="flex flex-col">
+            <span>PDF (Preview)</span>
+            <span className="text-xs text-muted-foreground">
+              Browser print — production PDF coming soon
+            </span>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
