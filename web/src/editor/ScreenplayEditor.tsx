@@ -8,6 +8,7 @@ import { EditorToolbar } from "./EditorToolbar";
 import { withKeyboardFlow, handleTab } from "./plugins/withKeyboardFlow";
 import { withAutoFormat } from "./plugins/withAutoFormat";
 import "./screenplay.css";
+import { EditorStatusBar } from "./EditorStatusBar";
 
 interface ScreenplayEditorProps {
   initialValue?: ScreenplayDocument;
@@ -61,25 +62,28 @@ export function ScreenplayEditor({
 
   return (
     <Slate editor={editor} initialValue={value} onChange={handleChange}>
-      <div className="screenplay-canvas">
-        <div className="w-full max-w-[8.5in] flex flex-col">
-          <EditorToolbar />
-          <div className="screenplay-page">
-            <Editable
-              renderElement={renderElement}
-              placeholder="FADE IN:"
-              className="outline-none min-h-100"
-              spellCheck
-              autoFocus
-              onKeyDown={(event) => {
-                if (event.key === "Tab") {
-                  const handled = handleTab(editor, event.shiftKey);
-                  if (handled) event.preventDefault();
-                }
-              }}
-            />
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-auto screenplay-canvas">
+          <div className="w-full max-w-[8.5in] mx-auto flex flex-col">
+            <EditorToolbar />
+            <div className="screenplay-page">
+              <Editable
+                renderElement={renderElement}
+                placeholder="FADE IN:"
+                className="outline-none min-h-100"
+                spellCheck
+                autoFocus
+                onKeyDown={(event) => {
+                  if (event.key === "Tab") {
+                    const handled = handleTab(editor, event.shiftKey);
+                    if (handled) event.preventDefault();
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
+        <EditorStatusBar />
       </div>
     </Slate>
   );

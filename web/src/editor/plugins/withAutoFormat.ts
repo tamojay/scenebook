@@ -1,23 +1,37 @@
 import { Editor, Transforms, Element as SlateElement, Range } from "slate";
-import type { ScreenplayEditor } from "../types";
+import type { ScreenplayEditor, ElementType } from "../types";
 
-// Patterns that trigger conversion to scene_heading.
-// Match must be at the start of the line, followed by a space or end-of-line.
+// Scene heading triggers — must be followed by a space to convert
 const SCENE_HEADING_TRIGGERS = ["INT.", "EXT.", "INT/EXT.", "I/E.", "EST."];
 
+// Transition triggers — text that ends with these phrases becomes transition.
+// Detection happens on Enter (line completion), not space.
+const TRANSITION_SUFFIXES = [
+  "CUT TO:",
+  "FADE TO:",
+  "DISSOLVE TO:",
+  "SMASH CUT TO:",
+  "MATCH CUT TO:",
+  "JUMP CUT TO:",
+  "TIME CUT TO:",
+  "FADE IN:",
+  "FADE IN.",
+  "FADE OUT.",
+  "FADE OUT:",
+  "THE END.",
+];
+
 export function withAutoFormat(editor: ScreenplayEditor): ScreenplayEditor {
-  const { insertText } = editor;
+  const { insertText, insertBreak } = editor;
 
   editor.insertText = (text) => {
     const { selection } = editor;
 
-    // Only fire on space — that's the natural "I've finished typing the prefix" signal
     if (text !== " " || !selection || !Range.isCollapsed(selection)) {
       insertText(text);
       return;
     }
 
-    // Find the current block
     const [match] = Editor.nodes(editor, {
       match: (n) => SlateElement.isElement(n) && Editor.isBlock(editor, n),
     });
@@ -27,31 +41,59 @@ export function withAutoFormat(editor: ScreenplayEditor): ScreenplayEditor {
     }
     const [node, path] = match;
 
-    // Only convert from action blocks (don't override deliberate choices)
     if (!SlateElement.isElement(node) || node.type !== "action") {
       insertText(text);
       return;
     }
 
-    // Get the text from the start of the block to the cursor
     const blockStart = Editor.start(editor, path);
     const range = { anchor: blockStart, focus: selection.anchor };
     const beforeText = Editor.string(editor, range).toUpperCase();
 
-    // Check if the text so far matches one of our triggers
     if (SCENE_HEADING_TRIGGERS.includes(beforeText)) {
-      // Convert the block to scene_heading
       Transforms.setNodes<SlateElement>(
         editor,
-        { type: "scene_heading" },
+        { type: "scene_heading" as ElementType },
         {
           match: (n) => SlateElement.isElement(n) && Editor.isBlock(editor, n),
         },
       );
     }
 
-    // Insert the space normally so the user can keep typing
     insertText(text);
+  };
+
+  // Detect transitions when the user presses Enter
+  editor.insertBreak = () => {
+    const { selection } = editor;
+    if (!selection || !Range.isCollapsed(selection)) {
+      insertBreak();
+      return;
+    }
+
+    const [match] = Editor.nodes(editor, {
+      match: (n) => SlateElement.isElement(n) && Editor.isBlock(editor, n),
+    });
+
+    if (match) {
+      const [node, path] = match;
+      if (SlateElement.isElement(node) && node.type === "action") {
+        const text = Editor.string(editor, path).trim().toUpperCase();
+        if (TRANSITION_SUFFIXES.some((s) => text === s || text.endsWith(s))) {
+          // Convert this block to a transition
+          Transforms.setNodes<SlateElement>(
+            editor,
+            { type: "transition" as ElementType },
+            {
+              match: (n) =>
+                SlateElement.isElement(n) && Editor.isBlock(editor, n),
+            },
+          );
+        }
+      }
+    }
+
+    insertBreak();
   };
 
   return editor;

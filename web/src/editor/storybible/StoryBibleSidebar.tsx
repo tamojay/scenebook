@@ -40,7 +40,7 @@ export function StoryBibleSidebar({
         side="right"
         className="w-full sm:max-w-md p-0 flex flex-col"
       >
-        <SheetHeader className="px-6 py-4 border-b border-border space-y-1">
+        <SheetHeader className="px-6 pr-14 py-4 border-b border-border space-y-1">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <SheetTitle className="font-['Instrument_Serif'] text-2xl">

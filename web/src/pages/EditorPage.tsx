@@ -17,6 +17,8 @@ import type { Project } from "@/lib/db/types";
 import type { ScreenplayDocument } from "@/editor/types";
 import { BookOpen } from "lucide-react";
 import { StoryBibleSidebar } from "@/editor/storybible/StoryBibleSidebar";
+import { Sparkles } from "lucide-react";
+import { BeatSheetDrawer } from "@/editor/beatsheet/BeatSheetDrawer";
 
 type LoadState =
   | { status: "loading" }
@@ -30,6 +32,7 @@ export function EditorPage() {
   const [currentDoc, setCurrentDoc] = useState<ScreenplayDocument | null>(null);
   const [storyBibleOpen, setStoryBibleOpen] = useState(false);
   const [jumpToIndex, setJumpToIndex] = useState<number | null>(null);
+  const [beatSheetOpen, setBeatSheetOpen] = useState(false);
 
   // Load project
   useEffect(() => {
@@ -72,6 +75,17 @@ export function EditorPage() {
 
   const { project } = state;
 
+  const targetPages =
+    project.format === "feature"
+      ? 110
+      : project.format === "tv_hour"
+        ? 60
+        : project.format === "tv_half"
+          ? 30
+          : project.format === "short"
+            ? 15
+            : 110;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="h-14 border-b border-border flex items-center px-4 md:px-6 gap-3">
@@ -91,6 +105,15 @@ export function EditorPage() {
             variant="ghost"
             size="sm"
             className="h-9"
+            onClick={() => setBeatSheetOpen(true)}
+          >
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Beats</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
             onClick={() => setStoryBibleOpen(true)}
           >
             <BookOpen className="h-4 w-4 mr-1.5" />
@@ -103,7 +126,7 @@ export function EditorPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-hidden">
         <ScreenplayEditor
           initialValue={initialValue ?? undefined}
           onChange={handleChange}
@@ -115,6 +138,12 @@ export function EditorPage() {
         onOpenChange={setStoryBibleOpen}
         document={currentDoc ?? initialValue ?? []}
         onJumpTo={(index) => setJumpToIndex(index)}
+      />
+      <BeatSheetDrawer
+        open={beatSheetOpen}
+        onOpenChange={setBeatSheetOpen}
+        document={currentDoc ?? initialValue ?? []}
+        targetPages={targetPages}
       />
     </div>
   );
