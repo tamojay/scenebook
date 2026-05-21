@@ -1,6 +1,6 @@
-import { useMemo, useState, useCallback } from "react";
-import { Slate, Editable, withReact } from "slate-react";
-import { createEditor } from "slate";
+import { useMemo, useState, useCallback, useEffect } from "react";
+import { Slate, Editable, withReact, ReactEditor } from "slate-react";
+import { createEditor, Transforms } from "slate";
 import { withHistory } from "slate-history";
 import type { ScreenplayDocument } from "./types";
 import { renderElement } from "./renderElement";
@@ -12,6 +12,7 @@ import "./screenplay.css";
 interface ScreenplayEditorProps {
   initialValue?: ScreenplayDocument;
   onChange?: (value: ScreenplayDocument) => void;
+  jumpToIndex?: number | null;
 }
 
 const DEFAULT_VALUE: ScreenplayDocument = [
@@ -21,6 +22,7 @@ const DEFAULT_VALUE: ScreenplayDocument = [
 export function ScreenplayEditor({
   initialValue = DEFAULT_VALUE,
   onChange,
+  jumpToIndex,
 }: ScreenplayEditorProps) {
   const editor = useMemo(
     () =>
@@ -28,6 +30,26 @@ export function ScreenplayEditor({
     [],
   );
   const [value, setValue] = useState<ScreenplayDocument>(initialValue);
+
+  useEffect(() => {
+    if (jumpToIndex == null) return;
+
+    try {
+      // Move selection to the start of the target block
+      const point = { path: [jumpToIndex, 0], offset: 0 };
+      Transforms.select(editor, point);
+
+      // Focus the editor and scroll the node into view
+      ReactEditor.focus(editor);
+      const domNode = ReactEditor.toDOMNode(
+        editor,
+        editor.children[jumpToIndex],
+      );
+      domNode.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch {
+      // Index out of range or stale — silently ignore
+    }
+  }, [jumpToIndex, editor]);
 
   const handleChange = useCallback(
     (newValue: ScreenplayDocument) => {

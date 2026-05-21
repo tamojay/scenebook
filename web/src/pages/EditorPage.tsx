@@ -15,6 +15,8 @@ import { toFountain } from "@/editor/export/fountain";
 import { downloadText, safeFilename } from "@/lib/utils";
 import type { Project } from "@/lib/db/types";
 import type { ScreenplayDocument } from "@/editor/types";
+import { BookOpen } from "lucide-react";
+import { StoryBibleSidebar } from "@/editor/storybible/StoryBibleSidebar";
 
 type LoadState =
   | { status: "loading" }
@@ -26,6 +28,8 @@ export function EditorPage() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const { initialValue, saveStatus, onChange } = useDocument(id);
   const [currentDoc, setCurrentDoc] = useState<ScreenplayDocument | null>(null);
+  const [storyBibleOpen, setStoryBibleOpen] = useState(false);
+  const [jumpToIndex, setJumpToIndex] = useState<number | null>(null);
 
   // Load project
   useEffect(() => {
@@ -83,6 +87,15 @@ export function EditorPage() {
         </div>
         <div className="flex items-center gap-2">
           <SaveIndicator status={saveStatus} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => setStoryBibleOpen(true)}
+          >
+            <BookOpen className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Story Bible</span>
+          </Button>
           <ExportMenu
             title={project.title}
             document={currentDoc ?? initialValue ?? []}
@@ -94,8 +107,15 @@ export function EditorPage() {
         <ScreenplayEditor
           initialValue={initialValue ?? undefined}
           onChange={handleChange}
+          jumpToIndex={jumpToIndex}
         />
       </main>
+      <StoryBibleSidebar
+        open={storyBibleOpen}
+        onOpenChange={setStoryBibleOpen}
+        document={currentDoc ?? initialValue ?? []}
+        onJumpTo={(index) => setJumpToIndex(index)}
+      />
     </div>
   );
 }
